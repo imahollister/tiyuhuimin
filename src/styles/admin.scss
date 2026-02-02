@@ -1,0 +1,94 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+  background-color: #f0f2f5;
+  height: 100vh;
+  width: 100%;
+}
+
+.admin-layout {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+.sidebar {
+  width: 256px;
+  background-color: #001529;
+  color: #fff;
+  flex-shrink: 0;
+  
+  h2 {
+    height: 64px;
+    line-height: 64px;
+    text-align: center;
+    background-color: #002140;
+    font-size: 20px;
+  }
+  
+  nav ul {
+    list-style: none;
+    
+    li a {
+      display: block;
+      height: 40px;
+      line-height: 40px;
+      padding-left: 24px;
+      color: rgba(255, 255, 255, 0.65);
+      text-decoration: none;
+      transition: all 0.3s;
+      
+      &:hover, &.active {
+        color: #fff;
+        background-color: #1890ff;
+      }
+    }
+  }
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  
+  header {
+    height: 64px;
+    background: #fff;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  }
+  
+  .page-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    
+    // Example 1920px adaptation logic if strictly needed, usually responsive is better
+    // But user asked for 1920x1080 compatibility
+    min-width: 1000px; 
+  }
+}
+
+.form-group {
+  margin-bottom: 20px;
+  
+  label {
+    display: block;
+    margin-bottom: 8px;
+  }
+  
+  input {
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    width: 300px;
+  }
+}
