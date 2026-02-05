@@ -3,27 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>项目入口</title>
+    <title>苏州市体育惠民系统 - 统一管理门户</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#39BC7A',
+                        'primary-hover': '#2E9B66',
+                        secondary: '#4F46E5',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        ul { list-style: none; padding: 0; }
-        li { margin-bottom: 10px; }
-        a { text-decoration: none; color: #007bff; font-size: 18px; }
-        a:hover { text-decoration: underline; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; overflow: hidden; }
+        .nav-item.active { 
+            background-color: rgba(57, 188, 122, 0.1); 
+            color: #39BC7A; 
+            border-right: 3px solid #39BC7A; 
+        }
+        .nav-item:hover:not(.active) { background-color: #f9fafb; }
+        
+        /* Custom scrollbar for sidebar */
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
     </style>
 </head>
-<body>
-    <h1>项目入口导航</h1>
-    <h2>移动端 (Mobile) - 375x812</h2>
-    <ul>
-        <li><a href="/mobile/index.html">移动端首页</a></li>
-        <li><a href="/mobile/user/index.html">移动端个人中心</a></li>
-    </ul>
+<body class="bg-gray-100 h-screen flex">
     
-    <h2>管理后台 (Admin) - 1920x1080</h2>
-    <ul>
-        <li><a href="/admin/index.html">后台首页</a></li>
-        <li><a href="/admin/settings/index.html">后台系统设置</a></li>
-    </ul>
+    <!-- Main Content Area (Iframe) -->
+    <main class="flex-1 h-full relative bg-gray-100 overflow-hidden flex flex-col">
+        <!-- Header for Iframe context -->
+        <header class="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm z-10">
+            <div class="flex items-center gap-4">
+                <span id="currentSystemName" class="text-lg font-semibold text-gray-800">平台运营后台</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700" id="systemType">O端</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="refreshIframe()" class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors" title="刷新页面">
+                    <i class="fas fa-redo-alt"></i>
+                </button>
+                <a href="#" id="openNewWindow" target="_blank" class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors" title="新窗口打开">
+                    <i class="fas fa-external-link-alt"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- Iframe Container -->
+        <div class="flex-1 relative w-full h-full bg-gray-50">
+            <iframe id="mainFrame" src="/admin/index.html" class="w-full h-full border-none" allowfullscreen></iframe>
+        </div>
+    </main>
+
+    <!-- Right Sidebar Navigation (Fixed) -->
+    <aside class="w-64 bg-white border-l border-gray-200 h-full flex flex-col shadow-xl z-20">
+        <!-- Logo Area -->
+        <div class="h-16 flex items-center px-6 border-b border-gray-200 bg-white">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white font-bold text-xl">
+                    惠
+                </div>
+                <span class="font-bold text-gray-800 text-lg tracking-wide">体育惠民</span>
+            </div>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <div class="flex-1 overflow-y-auto sidebar-scroll py-4 px-3 space-y-6">
+            
+            <!-- Group: Operation Center (O-End) -->
+            <div>
+                <div class="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    平台运营 (O端)
+                </div>
+                <button onclick="switchSystem('/admin/index.html', '平台运营后台', 'O端', this)" class="nav-item active w-full flex items-center px-3 py-3 text-gray-600 rounded-lg transition-all group">
+                    <div class="w-8 h-8 rounded-md bg-blue-50 text-blue-500 flex items-center justify-center mr-3 group-hover:bg-blue-100 transition-colors">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <div class="text-left">
+                        <div class="font-medium">平台管理后台</div>
+                        <div class="text-xs text-gray-400 mt-0.5">资源/订单/系统配置</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Group: Venue Center (B-End) -->
+            <div>
+                <div class="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    场馆商户 (B端)
+                </div>
+                <button onclick="switchSystem('/venue-admin/index.html', '场馆管理后台', 'B端', this)" class="nav-item w-full flex items-center px-3 py-3 text-gray-600 rounded-lg transition-all group">
+                    <div class="w-8 h-8 rounded-md bg-purple-50 text-purple-500 flex items-center justify-center mr-3 group-hover:bg-purple-100 transition-colors">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div class="text-left">
+                        <div class="font-medium">场馆管理后台</div>
+                        <div class="text-xs text-gray-400 mt-0.5">商品/核销/订单</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Group: Finance Center -->
+            <div>
+                <div class="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    财务监管 (F端)
+                </div>
+                <button onclick="switchSystem('/fund-admin/index.html', '资金池管理后台', 'F端', this)" class="nav-item w-full flex items-center px-3 py-3 text-gray-600 rounded-lg transition-all group">
+                    <div class="w-8 h-8 rounded-md bg-red-50 text-red-500 flex items-center justify-center mr-3 group-hover:bg-red-100 transition-colors">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="text-left">
+                        <div class="font-medium">资金池管理</div>
+                        <div class="text-xs text-gray-400 mt-0.5">对账/预警/统计</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Group: Mobile Preview (C-End) -->
+            <div>
+                <div class="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    移动客户端 (C端)
+                </div>
+                <button onclick="switchSystem('/mobile_preview.html', '移动端预览', 'C端', this)" class="nav-item w-full flex items-center px-3 py-3 text-gray-600 rounded-lg transition-all group">
+                    <div class="w-8 h-8 rounded-md bg-green-50 text-green-500 flex items-center justify-center mr-3 group-hover:bg-green-100 transition-colors">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="text-left">
+                        <div class="font-medium">移动端预览</div>
+                        <div class="text-xs text-gray-400 mt-0.5">用户/订场/购票</div>
+                    </div>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Footer Info -->
+        <div class="p-4 border-t border-gray-200 bg-gray-50">
+            <div class="text-xs text-center text-gray-400">
+                <p>苏州市体育惠民系统 v2.0</p>
+                <p class="mt-1">© 2026 TechDemo</p>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        function switchSystem(url, name, type, btnElement) {
+            // Update Iframe
+            const frame = document.getElementById('mainFrame');
+            frame.src = url;
+            
+            // Update Header Info
+            document.getElementById('currentSystemName').textContent = name;
+            const typeLabel = document.getElementById('systemType');
+            typeLabel.textContent = type;
+            document.getElementById('openNewWindow').href = url;
+            
+            // Update Type Colors
+            if(type === 'O端') typeLabel.className = 'text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700';
+            else if(type === 'B端') typeLabel.className = 'text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700';
+            else if(type === 'F端') typeLabel.className = 'text-xs px-2 py-0.5 rounded bg-red-100 text-red-700';
+            else if(type === 'C端') typeLabel.className = 'text-xs px-2 py-0.5 rounded bg-green-100 text-green-700';
+
+            // Update Active State
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            btnElement.classList.add('active');
+        }
+
+        function refreshIframe() {
+            const frame = document.getElementById('mainFrame');
+            frame.src = frame.src;
+        }
+
+        // Initialize
+        document.getElementById('openNewWindow').href = '/admin/index.html';
+    </script>
 </body>
 </html>

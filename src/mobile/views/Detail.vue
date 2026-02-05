@@ -1,174 +1,189 @@
 <template>
   <div class="detail-page" v-if="venue">
-    <van-nav-bar 
-      :title="venue.name" 
-      left-arrow 
-      @click-left="router.back()" 
-      fixed 
-      :border="false" 
-      style="--van-nav-bar-background: transparent; --van-nav-bar-title-text-color: transparent; --van-nav-bar-icon-color: #fff; z-index: 100;" 
-    >
-      <template #right>
-        <van-icon 
-          :name="isFavorited ? 'star' : 'star-o'" 
-          :color="isFavorited ? '#ff5000' : '#fff'" 
-          size="24" 
-          @click="toggleFavorite"
-        />
-      </template>
-    </van-nav-bar>
+    <!-- Immersive Header -->
+    <div class="nav-header" :class="{ 'scrolled': scrollY > 50 }">
+      <van-icon name="arrow-left" size="24" :color="headerIconColor" @click="router.back()" />
+      <div class="nav-title" :style="{ opacity: scrollY > 50 ? 1 : 0 }">{{ venue.name }}</div>
+      <van-icon :name="isFavorited ? 'star' : 'star-o'" :color="isFavorited ? '#ff5000' : headerIconColor" size="24" @click="toggleFavorite" />
+    </div>
     
-    <div class="hero-image">
-      <van-image :src="venue.image" width="100%" height="240" fit="cover" />
-      <div class="info-overlay">
-        <div class="header-info">
-          <div class="name">{{ venue.name }}</div>
-          <div class="score-row">
-            <van-rate v-model="venue.score" readonly size="12px" color="#ff9800" allow-half />
-            <span class="score-num">{{ venue.score }}分</span>
-          </div>
-          <div class="tags">
-            <van-tag type="primary" color="rgba(255,255,255,0.2)" text-color="#fff" v-for="tag in venue.tags" :key="tag">{{ tag }}</van-tag>
-            <van-tag type="danger" color="#ff5000" v-if="venue.isHot">热门</van-tag>
-            <van-tag type="success" color="#07c160" v-if="venue.isHuimin">惠民</van-tag>
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <van-image :src="venue.image" width="100%" height="280" fit="cover" />
+      <div class="hero-mask"></div>
+      <div class="hero-content">
+        <h1 class="venue-title">{{ venue.name }}</h1>
+        <div class="venue-tags">
+          <van-tag type="primary" size="medium" v-if="venue.venueType">{{ venue.venueType }}</van-tag>
+          <div class="rating">
+            <van-icon name="star" color="#ff9800" />
+            <span>{{ venue.score }}分</span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="content-body">
-      <div class="section info-section">
-        <div class="info-row">
-          <span class="label">场馆类型</span>
-          <span class="value">{{ venue.venueType || '综合场馆' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">营业时间</span>
-          <span class="value">{{ venue.businessHours || '09:00 - 22:00' }}</span>
-        </div>
-        <div class="info-row" v-if="venue.projectType">
-          <span class="label">项目类型</span>
-          <span class="value">{{ venue.projectType }}</span>
-        </div>
-        <div class="trust-badges">
-           <div class="badge-item" v-if="venue.fundSupervision">
-             <van-icon name="shield-o" color="#07c160" />
-             <span>资金监管</span>
-           </div>
-           <div class="badge-item" v-if="venue.enterpriseNature === '国企'">
-             <van-icon name="hotel-o" color="#1989fa" />
-             <span>国企运营</span>
-           </div>
-           <div class="badge-item" v-if="venue.hasSystem">
-             <van-icon name="cluster-o" color="#ff976a" />
-             <span>智慧系统</span>
-           </div>
-        </div>
-      </div>
-
-      <div class="section location-section">
-        <div class="location-row" @click="openMap">
+    <div class="main-container">
+      <!-- Info Card -->
+      <div class="info-card">
+        <div class="info-item" @click="openMap">
           <div class="left">
             <div class="address">{{ venue.address || venue.district }}</div>
-            <div class="distance">距您 {{ venue.distance }}</div>
+            <div class="distance">距您 2.5km</div>
           </div>
-          <div class="right">
-            <van-icon name="location" color="#1989fa" size="24" />
-            <div class="action-text">导航</div>
-          </div>
+          <van-icon name="guide-o" size="24" color="#1989fa" />
         </div>
-        <div class="location-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;" @click="callPhone">
+        <div class="divider"></div>
+        <div class="info-item">
           <div class="left">
-            <div class="address">联系电话：{{ venue.phone || '暂无' }}</div>
+            <div class="time-label">营业时间</div>
+            <div class="time-value">{{ venue.businessHours || '09:00 - 22:00' }}</div>
           </div>
-          <div class="right">
-            <van-icon name="phone" color="#07c160" size="24" />
-            <div class="action-text">拨打</div>
-          </div>
+          <van-icon name="phone-o" size="24" color="#333" @click="callPhone" />
         </div>
       </div>
 
-      <!-- 优惠券领券入口 (模拟) -->
-      <div class="section coupon-section" v-if="venue.price > 0">
-        <div class="coupon-row" @click="showToast('领取成功')">
-          <div class="label">优惠</div>
-          <div class="tags">
-            <span class="coupon-tag">满100减50</span>
-            <span class="coupon-tag">新人立减10</span>
-          </div>
-          <van-icon name="arrow" color="#999" />
-        </div>
-      </div>
+      <!-- Main Tabs -->
+      <van-tabs v-model:active="activeMainTab" sticky offset-top="50" class="content-tabs" background="#f7f8fa" color="#1989fa" title-active-color="#1989fa">
+        <van-tab title="在线预订" name="booking">
+          <div class="tab-pane">
+            
+            <!-- Case 1: Main Venue (Sub-venues List) -->
+            <div v-if="venue.venueLevel === 'main'" class="sub-venue-list">
+              <div class="sub-venue-item" v-for="sub in subVenues" :key="sub.id" @click="goToSubVenue(sub)">
+                <van-image :src="sub.image" width="100" height="75" radius="8" fit="cover" />
+                <div class="sub-info">
+                  <div class="name">{{ sub.name }}</div>
+                  <div class="tags">
+                    <span v-for="tag in sub.tags" :key="tag" class="mini-tag">{{ tag }}</span>
+                  </div>
+                  <div class="price-row">
+                    <span class="price">¥{{ sub.price }}<span class="unit">起</span></span>
+                    <van-button size="mini" round type="primary">预订</van-button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      <div class="section items-section">
-        <div class="section-title">预订项目</div>
-        <div class="items-list">
-          <div 
-            class="item-card" 
-            v-for="item in venue.items" 
-            :key="item.id"
-            :class="{ active: selectedItem?.id === item.id, disabled: item.stock === 0 }"
-            @click="selectItem(item)"
-          >
-            <div class="item-main">
-              <div class="name">{{ item.name }}</div>
-              <div class="stock-tag" v-if="item.stock < 10">仅剩{{ item.stock }}位</div>
-            </div>
-            <div class="price-box">
-              <span class="currency">¥</span>
-              <span class="price">{{ item.price }}</span>
-              <span class="original" v-if="item.originalPrice > item.price">¥{{ item.originalPrice }}</span>
-            </div>
-            <div class="check-icon" v-if="selectedItem?.id === item.id">
-              <van-icon name="success" color="#fff" size="12" />
+            <!-- Case 2: Sub/Standalone Venue -->
+            <div v-else>
+              <!-- Booking Calendar/Grid -->
+              <div class="booking-module" v-if="displayFields && displayFields.length">
+                <div class="module-title">场地选择</div>
+                
+                <!-- Date Scroll -->
+                <div class="date-scroll-wrapper">
+                  <div class="date-item" 
+                       v-for="(date, idx) in dateList" 
+                       :key="idx"
+                       :class="{ active: activeDateIndex === idx }"
+                       @click="activeDateIndex = idx">
+                    <div class="week">{{ date.weekLabel }}</div>
+                    <div class="day">{{ date.dateLabel }}</div>
+                  </div>
+                </div>
+
+                <!-- Grid -->
+                <div class="grid-container">
+                  <div class="grid-header">
+                    <div class="corner">场地\时间</div>
+                    <div class="time-row">
+                      <div class="time-col" v-for="slot in displaySlots" :key="slot.time">{{ slot.time }}</div>
+                    </div>
+                  </div>
+                  <div class="grid-body">
+                    <div class="field-row" v-for="field in displayFields" :key="field.id">
+                      <div class="field-name">{{ field.name }}</div>
+                      <div class="slots-row">
+                        <div class="slot-item" 
+                             v-for="(slot, sIdx) in displaySlots" 
+                             :key="sIdx"
+                             :class="getSlotClass(field, slot)"
+                             @click="handleSlotClick(field, slot)">
+                          <div class="price">¥{{ slot.price }}</div>
+                          <div class="status" v-if="getSlotClass(field, slot).selected">已选</div>
+                          <div class="status" v-else>可订</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Other Items List -->
+              <div class="items-module" v-if="ticketItems.length || serviceItems.length">
+                <!-- Tickets -->
+                <div v-if="ticketItems.length" class="group-section">
+                  <div class="module-title">门票产品</div>
+                  <div class="product-card" v-for="item in ticketItems" :key="item.id">
+                     <div class="prod-left">
+                       <div class="prod-name">{{ item.name }}</div>
+                       <div class="prod-desc">{{ item.description || '暂无描述' }}</div>
+                       <div class="prod-tags"><span class="tag green">门票</span></div>
+                     </div>
+                     <div class="prod-right">
+                       <div class="price">¥{{ item.price }}</div>
+                       <van-button size="small" round color="#ff9800" @click="buyTicket(item)">预订</van-button>
+                     </div>
+                  </div>
+                </div>
+
+                <!-- Services -->
+                <div v-if="serviceItems.length" class="group-section">
+                  <div class="module-title">培训课程</div>
+                  <div class="product-card" v-for="item in serviceItems" :key="item.id">
+                     <div class="prod-left">
+                       <div class="prod-name">{{ item.name }}</div>
+                       <div class="prod-desc">{{ item.description || '线下约课' }}</div>
+                       <div class="prod-tags">
+                         <span class="tag blue">培训</span>
+                         <span class="tag gray" v-if="item.duration">{{ item.duration }}</span>
+                       </div>
+                     </div>
+                     <div class="prod-right">
+                       <div class="price">¥{{ item.price }}</div>
+                       <van-button size="small" round color="#1989fa" @click="buyTicket(item)">购买</van-button>
+                     </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div v-if="(!displayFields || !displayFields.length) && !ticketItems.length && !serviceItems.length" class="empty-state">
+                <van-empty description="暂无预订信息" />
+              </div>
+
             </div>
           </div>
+        </van-tab>
+
+        <van-tab title="场馆详情" name="intro">
+          <div class="tab-pane">
+            <div class="intro-card">
+              <div class="intro-title">场馆介绍</div>
+              <div class="intro-text">{{ venue.intro || '暂无介绍' }}</div>
+            </div>
+          </div>
+        </van-tab>
+      </van-tabs>
+    </div>
+
+    <!-- Floating Action Bar -->
+    <div class="action-bar-placeholder" v-if="venue.venueLevel !== 'main' && selectedSlots.length"></div>
+    <div class="floating-bar" v-if="venue.venueLevel !== 'main' && selectedSlots.length">
+      <div class="bar-content">
+        <div class="left-info">
+          <div class="total">¥<span class="num">{{ totalPrice }}</span></div>
+          <div class="detail">已选 {{ selectedSlots.length }} 个时段</div>
         </div>
-      </div>
-      
-      <div class="section facilities-section">
-        <div class="section-title">场馆设施</div>
-        <div class="facilities-grid">
-          <div class="fac-item"><van-icon name="shop-o" /><span>更衣室</span></div>
-          <div class="fac-item"><van-icon name="logistics" /><span>储物柜</span></div>
-          <div class="fac-item"><van-icon name="free-postage" /><span>停车场</span></div>
-          <div class="fac-item"><van-icon name="gem-o" /><span>WIFI</span></div>
-        </div>
-      </div>
-      
-      <div class="section intro-section">
-        <div class="section-title">场馆介绍</div>
-        <div class="intro-text">
-          {{ venue.intro || venue.name + ' 位于' + venue.district + '，是一座现代化的综合体育场馆。' }}
-        </div>
+        <div class="right-btn" @click="submitOrder">立即预订</div>
       </div>
     </div>
 
-    <!-- 底部预订栏 -->
-    <van-action-bar>
-      <div class="price-estimate" v-if="selectedItem">
-        <div class="top-row">
-          <span class="label">预估实付</span>
-          <span class="value">¥{{ estimatePrice }}</span>
-        </div>
-        <div class="sub-row">已优惠 ¥{{ (selectedItem.price - estimatePrice).toFixed(2) }}</div>
-      </div>
-      <div class="price-estimate" v-else>
-        <div class="label" style="font-size: 14px; color: #333; line-height: 50px;">请选择预订项目</div>
-      </div>
-      <van-action-bar-button 
-        type="danger" 
-        :text="selectedItem ? '立即预订' : '请选择'" 
-        :disabled="!selectedItem"
-        @click="goOrder" 
-        color="linear-gradient(to right, #ff6034, #ee0a24)"
-      />
-    </van-action-bar>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMockStore } from '../../stores/mock';
 import { showToast } from 'vant';
@@ -178,11 +193,38 @@ const router = useRouter();
 const store = useMockStore();
 
 const venue = ref(null);
-const selectedItem = ref(null);
+const subVenues = ref([]);
+const activeMainTab = ref('booking');
+const activeDateIndex = ref(0);
+const selectedSlots = ref([]);
+const scrollY = ref(0);
 
-const isFavorited = computed(() => {
-  return venue.value && store.userAssets.favorites.includes(venue.value.id);
+// Scroll Listener for Header
+const handleScroll = () => {
+  scrollY.value = window.scrollY;
+};
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll);
+  const id = parseInt(route.params.id);
+  venue.value = store.venues.find(v => v.id === id);
+  if (!venue.value) {
+    showToast('场馆不存在');
+    router.back();
+    return;
+  }
+  store.addToHistory(venue.value.id);
+  if (venue.value.venueLevel === 'main') {
+    subVenues.value = store.venues.filter(v => v.pid === venue.value.id);
+  }
 });
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
+
+const headerIconColor = computed(() => scrollY.value > 50 ? '#333' : '#fff');
+const isFavorited = computed(() => venue.value && store.userAssets.favorites.includes(venue.value.id));
 
 const toggleFavorite = () => {
   if (!venue.value) return;
@@ -190,361 +232,409 @@ const toggleFavorite = () => {
   showToast(isAdded ? '收藏成功' : '已取消收藏');
 };
 
-onMounted(() => {
-  const id = parseInt(route.params.id);
-  venue.value = store.venues.find(v => v.id === id);
-  if (!venue.value) {
-    showToast('场馆不存在');
-    router.back();
+const ticketItems = computed(() => venue.value?.items?.filter(i => i.type === 'ticket') || []);
+const serviceItems = computed(() => venue.value?.items?.filter(i => i.type === 'service') || []);
+const displayFields = computed(() => {
+  if (venue.value?.fields?.length) return venue.value.fields;
+  const bookingItem = venue.value?.items?.find(i => i.type === 'booking');
+  return bookingItem ? bookingItem.fields : [];
+});
+const displaySlots = computed(() => {
+  if (venue.value?.slots?.length) return venue.value.slots;
+  const bookingItem = venue.value?.items?.find(i => i.type === 'booking');
+  return bookingItem ? bookingItem.slots : [];
+});
+
+const dateList = computed(() => {
+  const list = [];
+  const today = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const month = d.getMonth() + 1;
+    const date = d.getDate();
+    const weekMap = ['周日','周一','周二','周三','周四','周五','周六'];
+    list.push({ 
+      weekLabel: i === 0 ? '今天' : weekMap[d.getDay()], 
+      dateLabel: `${month}/${date}`,
+      value: d.toISOString().split('T')[0] 
+    });
+  }
+  return list;
+});
+
+const openMap = () => showToast('打开地图导航...');
+const callPhone = () => showToast(`拨打 ${venue.value.phone}`);
+
+const goToSubVenue = (sub) => {
+  router.push(`/mobile/detail/${sub.id}`).then(() => {
+    venue.value = sub;
+    selectedSlots.value = [];
+    activeDateIndex.value = 0;
+    subVenues.value = [];
+    window.scrollTo(0, 0);
+  });
+};
+
+const getSlotClass = (field, slot) => {
+  const isSelected = selectedSlots.value.some(s => s.fieldId === field.id && s.time === slot.time);
+  return { selected: isSelected };
+};
+
+const handleSlotClick = (field, slot) => {
+  const index = selectedSlots.value.findIndex(s => s.fieldId === field.id && s.time === slot.time);
+  if (index !== -1) {
+    selectedSlots.value.splice(index, 1);
   } else {
-    // 记录足迹
-    store.addToHistory(venue.value.id);
+    if (selectedSlots.value.length >= 4) {
+      showToast('一次最多选择4个时段');
+      return;
+    }
+    selectedSlots.value.push({
+      fieldId: field.id,
+      fieldName: field.name,
+      time: slot.time,
+      price: slot.price
+    });
   }
-});
-
-const selectItem = (item) => {
-  if (item.stock === 0) return;
-  selectedItem.value = item;
 };
 
-const openMap = () => {
-  if (!venue.value) return;
-  // 实际开发中可调用微信JSSDK或打开外部地图
-  window.open(`https://uri.amap.com/marker?position=${venue.value.longitude},${venue.value.latitude}&name=${venue.value.name}`);
-};
+const totalPrice = computed(() => selectedSlots.value.reduce((sum, s) => sum + s.price, 0));
 
-const callPhone = () => {
-  if (!venue.value || !venue.value.phone) {
-    showToast('暂无联系电话');
-    return;
-  }
-  window.location.href = `tel:${venue.value.phone}`;
-};
-
-// 简单的预估逻辑：取最大面额可用券
-const estimatePrice = computed(() => {
-  if (!selectedItem.value) return 0;
-  const price = selectedItem.value.price;
-  
-  // 查找可用优惠券
-  const validCoupons = store.userAssets.coupons.filter(c => c.status === 0 && price >= c.minSpend);
-  const maxCoupon = validCoupons.sort((a, b) => b.value - a.value)[0];
-  const couponVal = maxCoupon ? maxCoupon.value : 0;
-  
-  // 扣除优惠券
-  let final = price - couponVal;
-  
-  // 扣除余额 (假设全部可用)
-  if (store.userAssets.balance > 0) {
-    final = Math.max(0, final - store.userAssets.balance);
-  }
-  
-  return final.toFixed(2);
-});
-
-const goOrder = () => {
-  if (!selectedItem.value) return;
-  
-  // 传递预订信息到下单页
-  // 实际项目中可能通过 Pinia 存储临时订单状态，这里简化通过 Query 参数或直接存 Store
-  const orderDraft = {
+const submitOrder = () => {
+  if (!selectedSlots.value.length) return;
+  const orderData = {
     venueId: venue.value.id,
     venueName: venue.value.name,
-    itemId: selectedItem.value.id,
-    itemName: selectedItem.value.name,
-    price: selectedItem.value.price
+    date: dateList.value[activeDateIndex.value].value,
+    items: selectedSlots.value,
+    totalPrice: totalPrice.value
   };
-  
-  // 简单存到 sessionStorage 传递
-  sessionStorage.setItem('orderDraft', JSON.stringify(orderDraft));
+  sessionStorage.setItem('orderDraft', JSON.stringify(orderData));
+  router.push('/mobile/order-confirm');
+};
+
+const buyTicket = (item) => {
+  sessionStorage.setItem('orderDraft', JSON.stringify({
+    venueId: venue.value.id,
+    venueName: venue.value.name,
+    itemId: item.id,
+    itemName: item.name,
+    price: item.price
+  }));
   router.push('/mobile/order-confirm');
 };
 </script>
 
 <style lang="scss" scoped>
 .detail-page {
-  padding-bottom: 90px;
   background: #f7f8fa;
   min-height: 100vh;
+  padding-bottom: 20px;
 }
 
-.hero-image {
-  position: relative;
-  .info-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-    padding: 20px 16px;
-    color: #fff;
-    
-    .name {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
-    
-    .tags {
-      display: flex;
-      gap: 6px;
-    }
-  }
-}
-
-.section {
-  background: #fff;
-  margin-top: 10px;
-  padding: 16px;
-  
-  .section-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    border-left: 3px solid #1989fa;
-    padding-left: 8px;
-  }
-}
-
-
-
-.info-section {
-  .info-row {
-    display: flex;
-    margin-bottom: 8px;
-    font-size: 14px;
-    
-    .label {
-      color: #999;
-      width: 70px;
-    }
-    .value {
-      color: #333;
-      flex: 1;
-    }
-  }
-  
-  .trust-badges {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #f5f5f5;
-    
-    .badge-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      color: #666;
-    }
-  }
-}
-
-.price-estimate {
-  flex: 1;
-  padding-left: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  
-  .label {
-    font-size: 12px;
-    color: #666;
-  }
-  
-  .value {
-    color: #ff5000;
-    font-size: 18px;
-    font-weight: bold;
-  }
-}
-
-.location-row {
+// 1. Navigation Header
+.nav-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 50px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 16px;
+  z-index: 100;
+  transition: all 0.3s ease;
   
-  .left {
-    flex: 1;
-    .address { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 4px; }
-    .distance { font-size: 12px; color: #999; }
+  &.scrolled {
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   }
   
-  .right {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-left: 16px;
-    border-left: 1px solid #eee;
-    min-width: 60px;
-    
-    .action-text {
-      font-size: 10px;
-      color: #1989fa;
-      margin-top: 2px;
-    }
+  .nav-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    transition: opacity 0.3s;
   }
 }
 
-.coupon-section {
-  .coupon-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+// 2. Hero Section
+.hero-section {
+  position: relative;
+  height: 280px;
+  
+  .hero-mask {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.8) 100%);
+  }
+  
+  .hero-content {
+    position: absolute;
+    bottom: 40px;
+    left: 20px;
+    right: 20px;
+    color: #fff;
     
-    .label {
-      font-size: 14px;
-      font-weight: bold;
-      color: #333;
+    .venue-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
     
-    .tags {
-      flex: 1;
+    .venue-tags {
       display: flex;
-      gap: 6px;
+      align-items: center;
+      gap: 10px;
       
-      .coupon-tag {
-        font-size: 10px;
-        color: #ff5000;
-        background: rgba(255, 80, 0, 0.1);
-        padding: 2px 6px;
+      .rating {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(4px);
+        padding: 2px 8px;
         border-radius: 4px;
-        border: 1px solid rgba(255, 80, 0, 0.2);
+        font-size: 12px;
+        font-weight: 600;
       }
     }
   }
 }
 
-.items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+// 3. Main Container (overlaps hero)
+.main-container {
+  position: relative;
+  margin-top: -20px;
+  border-radius: 20px 20px 0 0;
+  background: #f7f8fa;
+  overflow: hidden;
+  z-index: 10;
+}
+
+// 4. Info Card
+.info-card {
+  background: #fff;
+  border-radius: 16px;
+  margin: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
   
-  .item-card {
-    border: 1px solid #f5f5f5;
-    border-radius: 12px;
-    padding: 16px;
+  .info-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    padding: 8px 0;
     
-    &.active {
-      border-color: #ff5000;
-      background-color: #fffbf8;
-      
-      .check-icon {
-        position: absolute;
-        top: 0;
-        right: 0;
-        background: #ff5000;
-        width: 20px;
-        height: 18px;
-        border-bottom-left-radius: 8px;
-        border-top-right-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
+    .left {
+      flex: 1;
+      .address { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 4px; }
+      .distance, .time-label { font-size: 12px; color: #999; }
+      .time-value { font-size: 14px; color: #333; font-weight: 500; }
     }
+  }
+  .divider { height: 1px; background: #f5f5f5; margin: 8px 0; }
+}
+
+// 5. Tabs & Content
+::v-deep(.van-tabs__wrap) { border-radius: 0 0 16px 16px; }
+.tab-pane { padding: 16px; }
+
+// Sub-venues
+.sub-venue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sub-venue-item {
+  display: flex;
+  background: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  
+  .sub-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     
-    &.disabled {
-      opacity: 0.6;
-      background: #f9f9f9;
-      pointer-events: none;
-    }
+    .name { font-weight: bold; font-size: 16px; color: #333; }
+    .tags { display: flex; gap: 4px; }
+    .mini-tag { font-size: 10px; background: #f0f8ff; color: #1989fa; padding: 2px 4px; border-radius: 4px; }
     
-    .item-main {
-      .name {
-        font-size: 16px;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 4px;
-      }
-      .stock-tag {
-        font-size: 10px;
-        color: #ff5000;
-        background: rgba(255, 80, 0, 0.08);
-        display: inline-block;
-        padding: 1px 4px;
-        border-radius: 4px;
-      }
-    }
-    
-    .price-box {
-      text-align: right;
-      
-      .currency { font-size: 12px; color: #ff5000; font-weight: bold; }
-      .price { font-size: 20px; color: #ff5000; font-weight: bold; }
-      .original { 
-        font-size: 12px; 
-        color: #999; 
-        text-decoration: line-through;
-        margin-left: 6px;
-      }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .price { color: #ff5000; font-size: 16px; font-weight: bold; .unit { font-size: 12px; font-weight: normal; } }
     }
   }
 }
 
-.facilities-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+// Booking Module
+.booking-module {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+}
+.module-title { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 12px; border-left: 4px solid #1989fa; padding-left: 8px; }
+
+// Date Scroll
+.date-scroll-wrapper {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 4px;
   
-  .fac-item {
+  .date-item {
+    flex-shrink: 0;
+    width: 60px;
+    height: 64px;
+    background: #f7f8fa;
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    color: #666;
-    font-size: 12px;
+    justify-content: center;
+    border: 1px solid transparent;
+    transition: all 0.2s;
     
-    .van-icon {
-      font-size: 20px;
-      color: #333;
+    .week { font-size: 12px; color: #666; margin-bottom: 4px; }
+    .day { font-size: 14px; font-weight: 600; color: #333; }
+    
+    &.active {
+      background: #e6f7ff;
+      border-color: #1989fa;
+      .week, .day { color: #1989fa; }
     }
   }
 }
 
-.intro-text {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.6;
-  text-align: justify;
+// New Grid Style
+.grid-container {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
 }
-
-.price-estimate {
-  flex: 1;
-  padding-left: 16px;
+.grid-header {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  
-  .top-row {
+  background: #f9f9f9;
+  border-bottom: 1px solid #eee;
+  .corner { width: 80px; flex-shrink: 0; padding: 12px 0; text-align: center; font-size: 12px; color: #999; border-right: 1px solid #eee; }
+  .time-row { flex: 1; display: flex; overflow-x: hidden; } // Hidden for simplicity here, ideally sync scroll
+  .time-col { flex: 1; min-width: 70px; text-align: center; padding: 12px 0; font-size: 12px; color: #666; border-right: 1px solid #eee; }
+}
+.grid-body {
+  overflow-x: auto;
+  .field-row {
     display: flex;
-    align-items: baseline;
-    gap: 6px;
-    
-    .label {
-      font-size: 12px;
-      color: #333;
-    }
-    
-    .value {
-      color: #ff5000;
-      font-size: 20px;
-      font-weight: bold;
+    border-bottom: 1px solid #eee;
+    &:last-child { border-bottom: none; }
+    .field-name { width: 80px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #fff; font-size: 13px; font-weight: 600; border-right: 1px solid #eee; position: sticky; left: 0; z-index: 2; }
+    .slots-row { display: flex; }
+    .slot-item {
+      width: 70px;
+      height: 56px;
+      flex-shrink: 0;
+      border-right: 1px solid #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      
+      .price { font-size: 13px; color: #ff5000; font-weight: 600; }
+      .status { font-size: 10px; color: #999; margin-top: 2px; }
+      
+      &.selected {
+        background: #1989fa;
+        .price, .status { color: #fff; }
+      }
+      &:active { opacity: 0.8; }
     }
   }
+}
+
+// Product Cards
+.product-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
   
-  .sub-row {
-    font-size: 10px;
-    color: #ff5000;
+  .prod-left {
+    flex: 1;
+    margin-right: 12px;
+    .prod-name { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 6px; }
+    .prod-desc { font-size: 12px; color: #999; margin-bottom: 8px; }
+    .prod-tags { display: flex; gap: 6px; }
+    .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+    .tag.green { background: #e8f5e9; color: #4caf50; }
+    .tag.blue { background: #e3f2fd; color: #2196f3; }
+    .tag.gray { background: #f5f5f5; color: #999; }
+  }
+  .prod-right {
+    text-align: right;
+    .price { font-size: 18px; color: #ff5000; font-weight: bold; margin-bottom: 8px; }
+  }
+}
+
+// Intro Card
+.intro-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 16px;
+  min-height: 200px;
+  .intro-title { font-size: 18px; font-weight: bold; margin-bottom: 16px; }
+  .intro-text { font-size: 14px; color: #666; line-height: 1.8; text-align: justify; }
+}
+
+// Floating Bar
+.action-bar-placeholder { height: 70px; }
+.floating-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  height: 60px;
+  background: #333;
+  border-radius: 30px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  padding: 0 6px 0 24px;
+  z-index: 999;
+  
+  .bar-content {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .left-info {
+      color: #fff;
+      .total { font-size: 14px; .num { font-size: 20px; font-weight: bold; } }
+      .detail { font-size: 10px; color: #999; }
+    }
+    
+    .right-btn {
+      background: linear-gradient(135deg, #ff6034, #ee0a24);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-weight: 600;
+      font-size: 14px;
+    }
   }
 }
 </style>

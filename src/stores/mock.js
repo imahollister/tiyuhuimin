@@ -15,9 +15,10 @@ export const useMockStore = defineStore('mock', {
     ],
     // 可领取的优惠券配置
     availableCoupons: [
-      { id: 101, name: '春季运动券', value: 15, minSpend: 30, type: 'general', desc: '全场通用，春季限定', total: 1000, remaining: 850 },
-      { id: 102, name: '游泳专项券', value: 20, minSpend: 40, type: 'category', desc: '仅限游泳项目使用', total: 500, remaining: 120 },
-      { id: 103, name: '新人见面礼', value: 50, minSpend: 0, type: 'general', desc: '新用户注册专享', total: 9999, remaining: 9999 }
+      { id: 101, name: '春季运动券', value: 15, minSpend: 30, type: 'general', usageScope: 'all', desc: '全场通用，春季限定', total: 1000, remaining: 850 },
+      { id: 102, name: '游泳专项券', value: 20, minSpend: 40, type: 'category', usageScope: 'booking', desc: '仅限游泳项目使用', total: 500, remaining: 120 },
+      { id: 103, name: '新人见面礼', value: 50, minSpend: 0, type: 'general', usageScope: 'all', desc: '新用户注册专享', total: 9999, remaining: 9999 },
+      { id: 104, name: '私教体验券', value: 100, minSpend: 200, type: 'general', usageScope: 'service', desc: '仅限私教服务使用', total: 200, remaining: 150 }
     ],
     // 苏州场馆数据
     venues: [
@@ -62,6 +63,7 @@ export const useMockStore = defineStore('mock', {
         hasSystem: true,
         fundSupervision: true,
         venueLevel: 'main', // main or sub
+        pid: null, // 父场馆ID
         financeInfo: {
           merchantName: '苏州奥体中心',
           creditCode: '91320594MA1XYXXXX',
@@ -71,10 +73,105 @@ export const useMockStore = defineStore('mock', {
           huishibaoId: ''
         },
         items: [
-          { id: 101, name: '羽毛球', price: 80, originalPrice: 100, stock: 12 },
-          { id: 102, name: '篮球', price: 300, originalPrice: 350, stock: 5 },
-          { id: 103, name: '游泳', price: 50, originalPrice: 60, stock: 99 },
-          { id: 104, name: '网球', price: 120, originalPrice: 150, stock: 3 }
+          { id: 1001, name: '奥体中心参观票', price: 20, originalPrice: 30, stock: 999, type: 'ticket', status: 1 },
+          { id: 1002, name: '游泳私教体验课', price: 150, originalPrice: 200, stock: 50, type: 'service', description: '专业教练一对一指导，包含入场费，时长60分钟', duration: '60分钟', status: 1 },
+          { id: 1003, name: '羽毛球陪练服务', price: 100, originalPrice: 120, stock: 20, type: 'service', description: '专业陪练，不含场地费', duration: '60分钟', status: 0 }
+        ]
+      },
+      // 奥体子场馆 - 羽毛球馆
+      {
+        id: 101,
+        pid: 1,
+        name: '奥体羽毛球馆',
+        district: '工业园区',
+        address: '工业园区中新大道东999号',
+        latitude: 31.3155,
+        longitude: 120.7388,
+        phone: '0512-62626262',
+        intro: '专业的羽毛球场地，符合国际赛事标准。',
+        distance: '2.5km',
+        tags: ['专业', '空调'],
+        image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=badminton%20court&image_size=landscape_4_3',
+        price: 80,
+        score: 4.9,
+        venueNo: 'V001-01',
+        enabled: true,
+        venueType: '专业场馆',
+        projectType: '羽毛球',
+        businessHours: '09:00 - 22:00',
+        venueLevel: 'sub',
+        isChargeable: true,
+        needReservation: true,
+        // 场地与时段配置
+        fields: [
+          { id: 1, name: '1号场' },
+          { id: 2, name: '2号场' },
+          { id: 3, name: '3号场' },
+          { id: 4, name: '4号场' }
+        ],
+        slots: [
+          { time: '09:00-10:00', price: 60 },
+          { time: '10:00-11:00', price: 60 },
+          { time: '11:00-12:00', price: 60 },
+          { time: '12:00-13:00', price: 60 },
+          { time: '13:00-14:00', price: 60 },
+          { time: '14:00-15:00', price: 60 },
+          { time: '15:00-16:00', price: 60 },
+          { time: '16:00-17:00', price: 60 },
+          { time: '17:00-18:00', price: 80 },
+          { time: '18:00-19:00', price: 80 },
+          { time: '19:00-20:00', price: 80 },
+          { time: '20:00-21:00', price: 80 },
+          { time: '21:00-22:00', price: 80 }
+        ],
+        bookings: [], // { fieldId, date, time, status }
+        items: [
+          { id: 10101, name: '羽毛球单次入场券', price: 30, originalPrice: 40, stock: 200, type: 'ticket', description: '非黄金时段散客入场', status: 1 },
+          { id: 10102, name: '羽毛球陪练(初级)', price: 100, originalPrice: 150, stock: 10, type: 'service', description: '专业陪练1小时，不含场地费', duration: '1小时', status: 1 },
+          { id: 10103, name: '羽毛球私教课', price: 200, originalPrice: 280, stock: 5, type: 'service', description: '一对一教学，纠正动作', duration: '1小时', status: 1 }
+        ]
+      },
+      // 奥体子场馆 - 游泳馆
+      {
+        id: 102,
+        pid: 1,
+        name: '奥体游泳馆',
+        district: '工业园区',
+        address: '工业园区中新大道东999号',
+        latitude: 31.3155,
+        longitude: 120.7388,
+        phone: '0512-62626262',
+        intro: '恒温泳池，水质优良，拥有标准比赛池和训练池。',
+        distance: '2.5km',
+        tags: ['恒温', '水质好'],
+        image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=indoor%20swimming%20pool&image_size=landscape_4_3',
+        price: 50,
+        score: 4.8,
+        venueNo: 'V001-02',
+        enabled: true,
+        venueType: '专业场馆',
+        projectType: '游泳',
+        businessHours: '10:00 - 21:00',
+        venueLevel: 'sub',
+        isChargeable: true,
+        needReservation: true,
+        // 游泳通常按人头或时段，这里简化为通用票
+        fields: [
+          { id: 1, name: '通用票' }
+        ],
+        slots: [
+          { time: '10:00-12:00', price: 50 },
+          { time: '12:00-14:00', price: 50 },
+          { time: '14:00-16:00', price: 50 },
+          { time: '16:00-18:00', price: 50 },
+          { time: '18:00-21:00', price: 60 }
+        ],
+        bookings: [],
+        items: [
+          { id: 10201, name: '游泳单次票', price: 50, originalPrice: 60, stock: 500, type: 'ticket', description: '单次入场，不限时' },
+          { id: 10202, name: '游泳次卡(10次)', price: 450, originalPrice: 600, stock: 100, type: 'ticket', description: '有效期3个月，可多人使用' },
+          { id: 10203, name: '游泳私教体验课', price: 150, originalPrice: 200, stock: 20, type: 'service', description: '一对一教学，包教会', duration: '60分钟' },
+          { id: 10204, name: '少儿游泳培训班', price: 1800, originalPrice: 2200, stock: 15, type: 'service', description: '暑期强化班，12节课', duration: '12课时' }
         ]
       },
       {
@@ -132,8 +229,9 @@ export const useMockStore = defineStore('mock', {
         price: 0,
         score: 4.6,
         items: [
-          { id: 401, name: '公园门票', price: 0, originalPrice: 0, stock: 999 },
-          { id: 402, name: '网球场', price: 100, originalPrice: 120, stock: 4 }
+          { id: 401, name: '公园门票', price: 0, originalPrice: 0, stock: 999, type: 'ticket' },
+          { id: 402, name: '网球场', price: 100, originalPrice: 120, stock: 4, type: 'ticket' },
+          { id: 403, name: '网球初级培训班', price: 1200, originalPrice: 1500, stock: 10, type: 'service', description: '10节课包，每节课90分钟，小班教学', duration: '10课时' }
         ]
       },
       {
@@ -176,6 +274,7 @@ export const useMockStore = defineStore('mock', {
           price: 80,
           realPay: 60,
           status: 'pending',
+          type: 'booking',
           createTime: '2025-02-02 10:15:22',
           image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=badminton%20court&image_size=square'
         },
@@ -186,6 +285,7 @@ export const useMockStore = defineStore('mock', {
           price: 45,
           realPay: 25,
           status: 'paid',
+          type: 'booking',
           createTime: '2025-02-01 14:30:00',
           image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=swimming%20pool&image_size=square'
         },
@@ -196,6 +296,7 @@ export const useMockStore = defineStore('mock', {
           price: 300,
           realPay: 250,
           status: 'used',
+          type: 'booking',
           createTime: '2025-01-20 18:00:00',
           image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=basketball%20court&image_size=square'
         },
@@ -206,8 +307,42 @@ export const useMockStore = defineStore('mock', {
           price: 120,
           realPay: 120,
           status: 'refunded',
+          type: 'booking',
           createTime: '2025-01-15 09:00:00',
           image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=tennis%20court&image_size=square'
+        },
+        {
+          id: 'ORD17067899991',
+          venueName: '苏州奥体中心',
+          itemName: '游泳私教体验课',
+          price: 150,
+          realPay: 150,
+          status: 'paid',
+          type: 'service',
+          createTime: '2025-02-03 09:00:00',
+          image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=swimming%20coach&image_size=square'
+        },
+        {
+          id: 'ORD17067899992',
+          venueName: '苏州奥体中心',
+          itemName: '奥体中心参观票',
+          price: 20,
+          realPay: 20,
+          status: 'paid',
+          type: 'booking',
+          createTime: '2025-02-03 09:30:00',
+          image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=ticket&image_size=square'
+        },
+        {
+          id: 'ORD17067899993',
+          venueName: '运河体育公园',
+          itemName: '网球初级培训班',
+          price: 1200,
+          realPay: 1200,
+          status: 'paid',
+          type: 'service',
+          createTime: '2025-02-03 10:00:00',
+          image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=tennis%20training&image_size=square'
         }
       ]
     },

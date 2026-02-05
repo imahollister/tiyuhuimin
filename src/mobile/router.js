@@ -15,6 +15,11 @@ const routes = [
     component: () => import('./views/Home.vue')
   },
   {
+    path: '/mobile/verification',
+    name: 'Verification',
+    component: () => import('./views/Verification.vue')
+  },
+  {
     path: '/mobile/detail/:id',
     name: 'Detail',
     component: () => import('./views/Detail.vue')

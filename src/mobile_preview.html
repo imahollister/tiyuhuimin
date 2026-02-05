@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体育惠民 - 移动端预览</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #ffffff; color: #333; }
+        .preview-container { display: flex; height: 100vh; overflow: hidden; align-items: center; justify-content: center; background: #f0f2f5; }
+        .phone-section { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        /* Removed phone frame styling, keeping dimensions */
+        .phone-frame { width: 375px; height: 812px; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+        .phone-content { height: 100%; width: 100%; }
+        .phone-content iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="phone-section">
+            <div class="phone-frame">
+                <div class="phone-content"><iframe id="phoneFrame" src="/mobile/index.html" frameborder="0"></iframe></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Simple script to handle iframe communication if needed, but navigation is now internal to the iframe app
+    </script>
+</body>
+</html>

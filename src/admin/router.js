@@ -29,6 +29,12 @@ const routes = [
         component: () => import('./views/CouponMgr.vue')
       },
       {
+        path: 'coupon/records/:id',
+        name: 'CouponRecords',
+        component: () => import('./views/CouponRecords.vue'),
+        meta: { title: '领取记录' }
+      },
+      {
         path: 'order',
         name: 'OrderMgr',
         component: () => import('./views/OrderMgr.vue')

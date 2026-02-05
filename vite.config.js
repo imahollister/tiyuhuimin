@@ -33,6 +33,7 @@ function getHtmlEntries(dir) {
 }
 
 const input = getHtmlEntries(resolve(__dirname, 'src'));
+input.src_fund_admin = resolve(__dirname, 'src/fund-admin/index.html');
 
 console.log('Detected HTML entries:', input);
 

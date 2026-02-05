@@ -1,9 +1,8 @@
 <template>
-  <div class="order-detail-page">
+  <div class="order-detail-page" v-if="order">
     <van-nav-bar title="订单详情" left-arrow @click-left="router.back()" fixed placeholder />
     
-    <!-- Status Header -->
-    <div class="status-header" :class="order.status">
+    <div class="status-card">
       <div class="status-text">{{ formatStatus(order.status) }}</div>
       <div class="sub-text" v-if="order.status === 'pending'">
         请在 {{ countdown }} 内完成支付，超时将自动取消
@@ -268,9 +267,11 @@ const onRefund = () => {
   left: 0;
   right: 0;
   background: #fff;
-  padding: 12px 16px;
-  display: flex;
-  gap: 12px;
+  padding: 10px 16px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
   box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 </style>

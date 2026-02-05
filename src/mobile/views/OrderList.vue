@@ -1,8 +1,8 @@
 <template>
   <div class="order-list-page">
-    <van-nav-bar title="我的订单" left-arrow @click-left="router.back()" fixed placeholder />
+    <van-nav-bar title="我的订单" left-arrow @click-left="router.back()" fixed placeholder :border="false" style="background: #f7f8fa;" />
     
-    <van-tabs v-model:active="activeTab" sticky offset-top="46">
+    <van-tabs v-model:active="activeTab" sticky offset-top="46" background="#f7f8fa" color="#1989fa" title-active-color="#1989fa">
       <van-tab title="全部" name="all"></van-tab>
       <van-tab title="待支付" name="pending"></van-tab>
       <van-tab title="待核销" name="paid"></van-tab>
@@ -12,48 +12,78 @@
 
     <div class="order-list">
       <van-empty 
-        v-if="filteredOrders.length === 0" 
+        v-if="paginatedOrders.length === 0" 
         description="暂无相关订单" 
         image="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=empty%20box%20illustration%2C%20minimalist%2C%20soft%20colors&image_size=square"
       />
       
-      <div class="order-card" v-for="order in filteredOrders" :key="order.id" @click="goDetail(order.id)">
-        <div class="header">
-          <span class="shop-name">{{ order.venueName }}</span>
+      <div class="order-card" v-for="order in paginatedOrders" :key="order.id" @click="goDetail(order.id)">
+        <div class="card-header">
+          <div class="shop-info">
+            <i class="ri-store-2-line icon"></i>
+            <span class="shop-name">{{ order.venueName }}</span>
+            <i class="ri-arrow-right-s-line arrow"></i>
+          </div>
           <span class="status" :class="order.status">{{ formatStatus(order.status) }}</span>
         </div>
-        <div class="content">
-          <van-image 
-            width="70" 
-            height="70" 
-            radius="4" 
-            fit="cover" 
-            src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=sports%20icon%20minimalist&image_size=square" 
-          />
-          <div class="info">
-            <div class="name">{{ order.itemName }}</div>
-            <div class="time">下单时间：{{ order.createTime }}</div>
-            <div class="price-row">
-              <span class="label">总价 ¥{{ order.price }}</span>
-              <span class="real-pay">实付 ¥<span class="num">{{ order.realPay }}</span></span>
+        
+        <div class="card-body">
+          <div class="product-info">
+            <van-image 
+              width="80" 
+              height="80" 
+              radius="8" 
+              fit="cover" 
+              :src="order.image || 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=sports%20icon%20minimalist&image_size=square'" 
+            />
+            <div class="info-right">
+              <div class="title-row">
+                <div class="name">{{ order.itemName }}</div>
+                <div class="price">¥{{ order.realPay }}</div>
+              </div>
+              <div class="desc-row">
+                <div class="time">下单时间：{{ order.createTime }}</div>
+                <div class="qty">x1</div>
+              </div>
+              <div class="tags-row" v-if="order.status === 'paid'">
+                <span class="tag">可核销</span>
+              </div>
             </div>
           </div>
         </div>
-        <div class="footer" v-if="order.status === 'paid'">
-          <van-button size="small" round>联系场馆</van-button>
-          <van-button size="small" round type="primary" class="action-btn">查看核销码</van-button>
+        
+        <div class="card-footer">
+          <div class="total-text">合计: <span class="price">¥{{ order.realPay }}</span></div>
+          <div class="actions">
+            <van-button size="small" round plain v-if="order.status === 'paid'">联系场馆</van-button>
+            <van-button size="small" round color="#1989fa" v-if="order.status === 'paid'">查看核销码</van-button>
+            
+            <van-button size="small" round plain v-if="order.status === 'pending'">取消订单</van-button>
+            <van-button size="small" round color="#ff5000" v-if="order.status === 'pending'">去支付</van-button>
+            
+            <van-button size="small" round plain v-if="order.status === 'used'">删除订单</van-button>
+            <van-button size="small" round plain v-if="order.status === 'used'">评价</van-button>
+          </div>
         </div>
-        <div class="footer" v-else-if="order.status === 'pending'">
-          <van-button size="small" round>取消订单</van-button>
-          <van-button size="small" round type="danger" class="action-btn">去支付</van-button>
-        </div>
+      </div>
+      
+      <!-- 分页器 -->
+      <div class="pagination-wrapper" v-if="totalPages > 1">
+        <van-pagination 
+          v-model="currentPage" 
+          :total-items="filteredOrders.length"
+          :items-per-page="pageSize"
+          :page-count="totalPages"
+          mode="simple"
+          @change="onPageChange"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useMockStore } from '../../stores/mock';
 
@@ -62,10 +92,19 @@ const route = useRoute();
 const store = useMockStore();
 const activeTab = ref('all');
 
+// 分页配置
+const pageSize = ref(10);
+const currentPage = ref(1);
+
 onMounted(() => {
   if (route.query.status) {
     activeTab.value = route.query.status;
   }
+});
+
+// 监听Tab切换，重置分页
+watch(activeTab, () => {
+  currentPage.value = 1;
 });
 
 const filteredOrders = computed(() => {
@@ -74,6 +113,25 @@ const filteredOrders = computed(() => {
   }
   return store.userAssets.orders.filter(o => o.status === activeTab.value);
 });
+
+// 分页后的订单
+const paginatedOrders = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredOrders.value.slice(start, end);
+});
+
+// 总页数
+const totalPages = computed(() => {
+  return Math.ceil(filteredOrders.value.length / pageSize.value);
+});
+
+// 切换页码
+const onPageChange = (page) => {
+  currentPage.value = page;
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 const formatStatus = (status) => {
   const map = {
@@ -97,89 +155,100 @@ const goDetail = (id) => {
 }
 
 .order-list {
-  padding: 12px;
+  padding: 16px;
+  padding-bottom: 80px;
 }
 
 .order-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 12px;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   
-  .header {
+  .card-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 12px;
-    font-size: 14px;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f9f9f9;
     
-    .shop-name {
+    .shop-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
       font-weight: 600;
       color: #333;
+      .icon { font-size: 18px; color: #666; }
+      .arrow { font-size: 16px; color: #ccc; }
     }
     
     .status {
-      color: #666;
+      font-size: 14px;
       &.pending { color: #ff5000; }
       &.paid { color: #1989fa; }
       &.used { color: #999; }
+      &.refunded { color: #999; }
     }
   }
   
-  .content {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-    
-    .info {
-      flex: 1;
+  .card-body {
+    margin-bottom: 16px;
+    .product-info {
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+      gap: 12px;
       
-      .name {
-        font-size: 15px;
-        font-weight: 500;
-        color: #333;
-      }
-      
-      .time {
-        font-size: 12px;
-        color: #999;
-      }
-      
-      .price-row {
+      .info-right {
+        flex: 1;
         display: flex;
+        flex-direction: column;
         justify-content: space-between;
-        align-items: flex-end;
         
-        .label {
+        .title-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          .name { font-size: 15px; font-weight: bold; color: #333; line-height: 1.4; flex: 1; margin-right: 10px; }
+          .price { font-size: 15px; font-weight: bold; color: #333; }
+        }
+        
+        .desc-row {
+          display: flex;
+          justify-content: space-between;
           font-size: 12px;
           color: #999;
-          text-decoration: line-through;
+          margin-top: 4px;
         }
         
-        .real-pay {
-          font-size: 12px;
-          color: #333;
-          .num {
-            font-size: 16px;
-            font-weight: 600;
-          }
+        .tags-row {
+          margin-top: 8px;
+          .tag { font-size: 10px; color: #1989fa; background: #e6f7ff; padding: 2px 6px; border-radius: 4px; }
         }
       }
     }
   }
   
-  .footer {
+  .card-footer {
     display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    border-top: 1px solid #f5f5f5;
-    padding-top: 10px;
+    justify-content: space-between;
+    align-items: center;
     
-    .action-btn {
-      padding: 0 20px;
+    .total-text { font-size: 13px; color: #666; .price { color: #333; font-weight: bold; font-size: 15px; } }
+    
+    .actions {
+      display: flex;
+      gap: 8px;
+      .van-button { padding: 0 16px; height: 30px; line-height: 28px; font-size: 13px; }
     }
   }
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 16px 0;
 }
 </style>

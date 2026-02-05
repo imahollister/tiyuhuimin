@@ -37,11 +37,12 @@
             <el-tag v-for="tag in row.tags" :key="tag" style="margin-right: 4px" size="small">{{ tag }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="260">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button size="small" type="success" @click="handleManageItems(row)">管理门票</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button link type="primary" @click="handleView(row)">查看</el-button>
+            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button link type="primary" @click="handleManageItems(row)">查看门票</el-button>
+            <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -58,8 +59,8 @@
     </el-card>
 
     <!-- Edit Drawer -->
-    <el-drawer v-model="dialogVisible" :title="isEdit ? '编辑场馆' : '新增场馆'" size="800px">
-      <el-form :model="form" label-width="140px">
+    <el-drawer v-model="dialogVisible" :title="isView ? '查看场馆' : (isEdit ? '编辑场馆' : '新增场馆')" size="800px">
+      <el-form :model="form" label-width="140px" :disabled="isView">
         <el-tabs v-model="activeTab">
           <!-- Tab 1: 基本信息 -->
           <el-tab-pane label="基本信息" name="basic">
@@ -107,6 +108,7 @@
                      <el-option label="体育中心" value="体育中心" />
                      <el-option label="综合体" value="综合体" />
                      <el-option label="学校场馆" value="学校场馆" />
+                     <el-option label="专业场馆" value="专业场馆" />
                    </el-select>
                 </el-form-item>
               </el-col>
@@ -215,6 +217,11 @@
                  <el-radio label="sub">子场馆</el-radio>
                </el-radio-group>
              </el-form-item>
+             <el-form-item label="上级场馆" v-if="form.venueLevel === 'sub'">
+               <el-select v-model="form.pid" placeholder="请选择主场馆" style="width: 100%">
+                 <el-option v-for="v in mainVenues" :key="v.id" :label="v.name" :value="v.id" />
+               </el-select>
+             </el-form-item>
              
              <div style="font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">财务信息</div>
              <el-form-item label="商户名称(周到付)">
@@ -231,48 +238,108 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSave">确定</el-button>
+          <el-button @click="dialogVisible = false">{{ isView ? '关闭' : '取消' }}</el-button>
+          <el-button v-if="!isView" type="primary" @click="handleSave">确定</el-button>
         </span>
       </template>
     </el-drawer>
 
     <!-- Items Management Drawer -->
-    <el-drawer v-model="itemsDialogVisible" title="门票/产品管理" size="600px">
+    <el-drawer v-model="itemsDialogVisible" title="门票/产品查看" size="800px">
       <div style="margin-bottom: 10px;">
-        <el-button type="primary" size="small" @click="addItem">添加产品</el-button>
+        <el-alert title="总后台仅供查看，如需修改请登录【场馆端后台】" type="info" show-icon :closable="false" />
       </div>
-      <el-table :data="currentItems" style="width: 100%" border>
-        <el-table-column prop="name" label="产品名称">
-          <template #default="{ row }">
-            <el-input v-model="row.name" size="small" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="price" label="价格" width="120">
-          <template #default="{ row }">
-            <el-input-number v-model="row.price" size="small" :min="0" style="width: 100px" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="originalPrice" label="原价" width="120">
-          <template #default="{ row }">
-            <el-input-number v-model="row.originalPrice" size="small" :min="0" style="width: 100px" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="stock" label="库存" width="120">
-          <template #default="{ row }">
-            <el-input-number v-model="row.stock" size="small" :min="0" style="width: 100px" />
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="80">
-          <template #default="{ $index }">
-            <el-button type="danger" icon="Delete" circle size="small" @click="removeItem($index)" />
-          </template>
-        </el-table-column>
-      </el-table>
+      
+      <!-- List View -->
+      <div class="items-list">
+        <el-collapse accordion>
+          <el-collapse-item v-for="(item, index) in currentItems" :key="index" :name="index">
+            <template #title>
+              <div class="item-header">
+                <span class="item-name">{{ item.name || '新产品' }}</span>
+                <span class="item-price">¥{{ item.price }}</span>
+                <el-tag size="small" :type="item.type === 'booking' ? 'warning' : (item.type === 'service' ? 'primary' : 'success')">
+                  {{ item.type === 'booking' ? '场地预订' : (item.type === 'service' ? '服务项目' : '普通门票') }}
+                </el-tag>
+                <el-tag size="small" :type="item.status === 1 ? 'success' : 'info'" style="margin-left: 5px">
+                  {{ item.status === 1 ? '上架中' : '已下架' }}
+                </el-tag>
+              </div>
+            </template>
+            
+            <el-form label-width="100px" style="padding: 10px" disabled>
+              <el-form-item label="产品名称">
+                <el-input v-model="item.name" />
+              </el-form-item>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="销售价格">
+                    <el-input-number v-model="item.price" style="width: 100%" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="原价">
+                    <el-input-number v-model="item.originalPrice" style="width: 100%" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-form-item label="库存">
+                <el-input-number v-model="item.stock" style="width: 100%" />
+              </el-form-item>
+              <el-form-item label="产品类型">
+                <el-radio-group v-model="item.type">
+                  <el-radio label="ticket">普通门票</el-radio>
+                  <el-radio label="booking">场地预订</el-radio>
+                  <el-radio label="service">服务项目</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              
+              <!-- Booking Configuration -->
+              <div v-if="item.type === 'booking'" class="booking-config">
+                <div style="font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">场地与时段配置</div>
+                
+                <div class="fields-section">
+                  <div style="margin-bottom: 5px; font-size: 13px; color: #666;">场地列表</div>
+                  <div v-for="(field, fIdx) in item.fields" :key="fIdx" style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <el-input v-model="field.name" size="small" />
+                  </div>
+                </div>
+                
+                <div class="slots-section" style="margin-top: 15px;">
+                  <div style="margin-bottom: 5px; font-size: 13px; color: #666;">时段价格</div>
+                  <div v-for="(slot, sIdx) in item.slots" :key="sIdx" style="display: flex; gap: 5px; margin-bottom: 5px; align-items: center;">
+                    <el-input v-model="slot.time" size="small" style="width: 200px" />
+                    <el-input-number v-model="slot.price" size="small" style="width: 100px" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Service Configuration -->
+              <div v-if="item.type === 'service'" class="service-config">
+                 <el-form-item label="服务描述">
+                   <el-input v-model="item.description" type="textarea" :rows="2" />
+                 </el-form-item>
+                 <el-form-item label="服务时长">
+                   <el-input v-model="item.duration" />
+                 </el-form-item>
+              </div>
+            </el-form>
+            <div style="text-align: right; padding: 10px; border-top: 1px solid #eee;">
+              <el-button 
+                :type="item.status === 1 ? 'warning' : 'success'" 
+                size="small" 
+                @click="toggleItemStatus(item, index)"
+              >
+                {{ item.status === 1 ? '下架' : '上架' }}
+              </el-button>
+            </div>
+          </el-collapse-item>
+        </el-collapse>
+      </div>
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="itemsDialogVisible = false">关闭</el-button>
-          <el-button type="primary" @click="saveItems">保存</el-button>
         </span>
       </template>
     </el-drawer>
@@ -288,8 +355,58 @@ import { Search } from '@element-plus/icons-vue';
 const store = useMockStore();
 const dialogVisible = ref(false);
 const isEdit = ref(false);
-const form = ref({});
+const isView = ref(false);
 const activeTab = ref('basic');
+const form = ref({
+  // Basic
+  venueNo: '',
+  name: '',
+  enabled: true,
+  isHuimin: false,
+  isHot: false,
+  district: '',
+  venueType: '',
+  address: '',
+  projectType: '',
+  longitude: 120.5853,
+  latitude: 31.2989,
+  phone: '',
+  tags: [],
+  
+  // Extended
+  image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=sports%20venue&image_size=landscape_4_3',
+  video: '',
+  sortOrder: 0,
+  businessHours: '',
+  companyBrand: '',
+  enterpriseNature: '',
+  officialAccountName: '',
+  miniProgramName: '',
+  submitter: '',
+  submitterPhone: '',
+  
+  // Finance & Accounts
+  accounts: [],
+  isChargeable: false,
+  needReservation: false,
+  hasSystem: false,
+  fundSupervision: false,
+  venueLevel: 'main',
+  pid: null,
+  fields: [],
+  slots: [],
+  financeInfo: {
+    merchantName: '',
+    creditCode: ''
+  },
+  
+  // Legacy
+  price: 0,
+  distance: '',
+  intro: ''
+});
+
+const mainVenues = computed(() => store.venues.filter(v => v.venueLevel === 'main' && v.id !== form.value.id));
 
 // Filter & Pagination
 const searchKeyword = ref('');
@@ -316,8 +433,28 @@ const itemsDialogVisible = ref(false);
 const currentVenueId = ref(null);
 const currentItems = ref([]);
 
+const toggleItemStatus = (item, index) => {
+  const newStatus = item.status === 1 ? 0 : 1;
+  const actionName = newStatus === 1 ? '上架' : '下架';
+  
+  ElMessageBox.confirm(`确定${actionName}该商品吗？`, '提示', { type: 'warning' }).then(() => {
+    item.status = newStatus;
+    // Sync to store
+    const v = store.venues.find(v => v.id === currentVenueId.value);
+    if (v && v.items) {
+      // Find the correct item in store
+      const storeItem = v.items.find(i => i.id === item.id);
+      if (storeItem) {
+        storeItem.status = newStatus;
+      }
+    }
+    ElMessage.success(`${actionName}成功`);
+  });
+};
+
 const handleAdd = () => {
   isEdit.value = false;
+  isView.value = false;
   activeTab.value = 'basic';
   form.value = {
     // Basic
@@ -354,6 +491,9 @@ const handleAdd = () => {
     hasSystem: false,
     fundSupervision: false,
     venueLevel: 'main',
+    pid: null,
+    fields: [],
+    slots: [],
     financeInfo: {
       merchantName: '',
       creditCode: ''
@@ -374,12 +514,15 @@ const handleManageItems = (row) => {
 };
 
 const addItem = () => {
-  currentItems.value.push({
-    id: Date.now(), // 临时ID
-    name: '新产品',
-    price: 0,
-    originalPrice: 0,
-    stock: 99
+  currentItems.value.push({ 
+    id: Date.now(), 
+    name: '新产品', 
+    price: 0, 
+    originalPrice: 0, 
+    stock: 999, 
+    type: 'ticket', // ticket | booking
+    fields: [],
+    slots: []
   });
 };
 
@@ -387,22 +530,70 @@ const removeItem = (index) => {
   currentItems.value.splice(index, 1);
 };
 
+// Booking configuration helpers
+const addField = (item) => {
+  if (!item.fields) item.fields = [];
+  item.fields.push({ name: '' });
+};
+
+const removeField = (item, index) => {
+  item.fields.splice(index, 1);
+};
+
+const addSlot = (item) => {
+  if (!item.slots) item.slots = [];
+  item.slots.push({ timeRange: ['09:00', '10:00'], price: 0 });
+};
+
+const removeSlot = (item, index) => {
+  item.slots.splice(index, 1);
+};
+
 const saveItems = () => {
+  // Format slots time range for all booking items
+  currentItems.value.forEach(item => {
+    if (item.type === 'booking' && item.slots) {
+      item.slots = item.slots.map(s => ({
+        ...s,
+        time: Array.isArray(s.timeRange) ? s.timeRange.join('-') : s.time
+      }));
+    }
+  });
+
   const venue = store.venues.find(v => v.id === currentVenueId.value);
   if (venue) {
-    venue.items = currentItems.value;
-    ElMessage.success('保存成功');
-    itemsDialogVisible.value = false;
+    venue.items = [...currentItems.value];
+    ElMessage.success('产品保存成功');
   }
+  itemsDialogVisible.value = false;
 };
 
 const handleEdit = (row) => {
+  console.log('Editing venue:', row);
   isEdit.value = true;
+  isView.value = false;
   activeTab.value = 'basic';
   const data = JSON.parse(JSON.stringify(row));
   // Ensure nested objects exist
   if (!data.financeInfo) data.financeInfo = {};
   if (!data.accounts) data.accounts = [];
+  // Fields and slots are now managed in "Manage Items" for booking type items
+  // But we keep them in form data for backward compatibility or if needed later
+  if (!data.fields) data.fields = [];
+  if (!data.slots) data.slots = [];
+  form.value = data;
+  dialogVisible.value = true;
+};
+
+const handleView = (row) => {
+  isEdit.value = false;
+  isView.value = true;
+  activeTab.value = 'basic';
+  const data = JSON.parse(JSON.stringify(row));
+  if (!data.financeInfo) data.financeInfo = {};
+  if (!data.accounts) data.accounts = [];
+  if (!data.fields) data.fields = [];
+  if (!data.slots) data.slots = [];
   form.value = data;
   dialogVisible.value = true;
 };
@@ -427,15 +618,26 @@ const handleDelete = (id) => {
 };
 
 const handleSave = () => {
+  // Format slots time range
+  const slots = form.value.slots.map(s => ({
+    time: Array.isArray(s.timeRange) ? s.timeRange.join('-') : s.time,
+    price: s.price,
+    timeRange: s.timeRange // Keep for UI
+  }));
+  
+  const formData = { ...form.value, slots };
+
   if (isEdit.value) {
     const index = store.venues.findIndex(v => v.id === form.value.id);
     if (index !== -1) {
-      store.venues[index] = { ...form.value };
+      store.venues[index] = formData;
       ElMessage.success('更新成功');
     }
   } else {
-    const newId = Math.max(...store.venues.map(v => v.id)) + 1;
-    store.venues.push({ ...form.value, id: newId });
+    // 确保id是数字类型
+    const maxId = store.venues.length > 0 ? Math.max(...store.venues.map(v => Number(v.id))) : 0;
+    const newId = maxId + 1;
+    store.venues.push({ ...formData, id: newId });
     ElMessage.success('添加成功');
   }
   dialogVisible.value = false;

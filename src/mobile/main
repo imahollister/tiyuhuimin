@@ -1,0 +1,23 @@
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
+import vant from 'vant';
+import 'vant/lib/index.css';
+import '../styles/mobile.scss';
+
+const app = createApp(App);
+
+app.use(router);
+app.use(vant);
+
+// 监听来自父窗口的导航消息
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'NAVIGATE') {
+    router.push(event.data.path);
+  }
+});
+
+// 告诉父窗口已准备好接收导航消息
+window.parent.postMessage({ type: 'READY' }, '*');
+
+app.mount('#app');

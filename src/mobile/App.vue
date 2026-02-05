@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMockStore } from '../stores/mock';
 import { showToast } from 'vant';
@@ -20,7 +20,37 @@ const route = useRoute();
 const router = useRouter();
 const store = useMockStore();
 
+// 监听来自父窗口的消息（预览模式导航）
+const handleMessage = (event) => {
+  if (event.data && event.data.type === 'NAVIGATE') {
+    router.push(event.data.path);
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('message', handleMessage);
+  // 通知父窗口应用已准备就绪
+  if (window.parent) {
+    window.parent.postMessage({ type: 'READY' }, '*');
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('message', handleMessage);
+});
+
+// 检测是否在 iframe 中（预览模式）
+const isInIframe = computed(() => {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+});
+
 const showTabbar = computed(() => {
+  // 在 iframe 预览模式下不显示底部导航栏
+  if (isInIframe.value) return false;
   return ['/mobile/home', '/mobile/user'].includes(route.path);
 });
 

@@ -24,26 +24,15 @@
       </template>
       
       <el-table :data="paginatedCoupons" style="width: 100%">
-        <el-table-column type="expand">
-           <template #default="props">
-             <div style="padding: 10px 20px; background: #f9f9f9;">
-               <p><strong>领取记录 (最近5条):</strong></p>
-               <el-table :data="getUsageRecords(props.row)" size="small" border style="width: 100%">
-                 <el-table-column prop="user" label="用户" width="120" />
-                 <el-table-column prop="time" label="操作时间" width="180" />
-                 <el-table-column prop="action" label="操作类型">
-                   <template #default="{ row }">
-                     <el-tag :type="row.action === 'claim' ? 'primary' : 'success'" size="small">
-                       {{ row.action === 'claim' ? '领取' : '核销' }}
-                     </el-tag>
-                   </template>
-                 </el-table-column>
-               </el-table>
-             </div>
-           </template>
-        </el-table-column>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="优惠券名称" width="180" />
+        <el-table-column prop="usageScope" label="适用范围" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.usageScope === 'all' ? 'primary' : (row.usageScope === 'service' ? 'warning' : 'info')">
+              {{ row.usageScope === 'all' ? '全场通用' : (row.usageScope === 'service' ? '教培服务' : '订场/门票') }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="type" label="类型" width="100">
           <template #default="{ row }">
             <el-tag :type="row.type === 'general' ? 'success' : 'warning'">
@@ -62,10 +51,12 @@
           </template>
         </el-table-column>
         <el-table-column prop="desc" label="描述" />
-        <el-table-column label="操作" width="180">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button link type="primary" @click="handleRecords(row)">记录</el-button>
+            <el-button link type="primary" @click="handleView(row)">查看</el-button>
+            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -82,8 +73,8 @@
     </el-card>
 
     <!-- Edit Drawer -->
-    <el-drawer v-model="dialogVisible" :title="isEdit ? '编辑优惠券' : '新增优惠券'" size="500px">
-      <el-form :model="form" label-width="100px">
+    <el-drawer v-model="dialogVisible" :title="isView ? '查看优惠券' : (isEdit ? '编辑优惠券' : '新增优惠券')" size="500px">
+      <el-form :model="form" label-width="100px" :disabled="isView">
         <el-form-item label="名称">
           <el-input v-model="form.name" placeholder="如：春季运动券" />
         </el-form-item>
@@ -92,6 +83,13 @@
             <el-option label="通用券" value="general" />
             <el-option label="专项券" value="category" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="适用范围">
+          <el-radio-group v-model="form.usageScope">
+            <el-radio label="all">全场通用</el-radio>
+            <el-radio label="booking">订场/门票</el-radio>
+            <el-radio label="service">教培服务</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="指定项目" v-if="form.type === 'category'">
            <el-select v-model="form.category" placeholder="请选择适用项目">
@@ -119,8 +117,8 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSave">确定</el-button>
+          <el-button @click="dialogVisible = false">{{ isView ? '关闭' : '取消' }}</el-button>
+          <el-button v-if="!isView" type="primary" @click="handleSave">确定</el-button>
         </span>
       </template>
     </el-drawer>
@@ -129,13 +127,16 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useMockStore } from '../../stores/mock';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 
+const router = useRouter();
 const store = useMockStore();
 const dialogVisible = ref(false);
 const isEdit = ref(false);
+const isView = ref(false);
 const form = ref({});
 
 // Filter & Pagination
@@ -158,13 +159,8 @@ const paginatedCoupons = computed(() => {
   return filteredCoupons.value.slice(start, end);
 });
 
-const getUsageRecords = (coupon) => {
-  // 模拟领取记录
-  return [
-    { user: '张三', time: '2023-05-20 14:30', action: 'claim' },
-    { user: '李四', time: '2023-05-21 09:15', action: 'claim' },
-    { user: '张三', time: '2023-05-22 18:20', action: 'use' }
-  ];
+const handleRecords = (row) => {
+  router.push(`/admin/coupon/records/${row.id}`);
 };
 
 const handleExport = () => {
@@ -173,9 +169,11 @@ const handleExport = () => {
 
 const handleAdd = () => {
   isEdit.value = false;
+  isView.value = false;
   form.value = {
     name: '',
     type: 'general',
+    usageScope: 'all',
     category: '', // 新增
     value: 10,
     minSpend: 0,
@@ -187,6 +185,14 @@ const handleAdd = () => {
 
 const handleEdit = (row) => {
   isEdit.value = true;
+  isView.value = false;
+  form.value = { ...row };
+  dialogVisible.value = true;
+};
+
+const handleView = (row) => {
+  isEdit.value = false;
+  isView.value = true;
   form.value = { ...row };
   dialogVisible.value = true;
 };

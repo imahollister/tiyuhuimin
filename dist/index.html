@@ -3,27 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>项目入口</title>
+    <title>苏州市体育惠民系统</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        ul { list-style: none; padding: 0; }
-        li { margin-bottom: 10px; }
-        a { text-decoration: none; color: #007bff; font-size: 18px; }
-        a:hover { text-decoration: underline; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            height: 100%; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .landing-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 50px;
+        }
+        .header h1 { font-size: 36px; font-weight: bold; margin-bottom: 10px; }
+        .header p { font-size: 16px; opacity: 0.9; }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        @media (max-width: 900px) {
+            .grid-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 24px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .grid-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+        
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .icon-box.admin { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        }
+        .icon-box.mobile { 
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); 
+        }
+        .icon-box.fund { 
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); 
+        }
+        
+        .grid-label { 
+            font-size: 20px; 
+            font-weight: bold; 
+            color: #333; 
+            margin-bottom: 8px; 
+        }
+        .grid-desc { 
+            font-size: 14px; 
+            color: #999; 
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 30px;
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <h1>项目入口导航</h1>
-    <h2>移动端 (Mobile) - 375x812</h2>
-    <ul>
-        <li><a href="/mobile/index.html">移动端首页</a></li>
-        <li><a href="/mobile/user/index.html">移动端个人中心</a></li>
-    </ul>
-    
-    <h2>管理后台 (Admin) - 1920x1080</h2>
-    <ul>
-        <li><a href="/admin/index.html">后台首页</a></li>
-        <li><a href="/admin/settings/index.html">后台系统设置</a></li>
-    </ul>
+    <div class="landing-container">
+        <div class="header">
+            <h1>苏州市体育惠民系统</h1>
+            <p>请选择要进入的系统</p>
+        </div>
+
+        <div class="grid-container">
+            <!-- 管理后台入口 -->
+            <a href="/admin/index.html" class="grid-item" target="_blank">
+                <div class="icon-box admin">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                    </svg>
+                </div>
+                <span class="grid-label">体育惠民管理后台</span>
+                <span class="grid-desc">1920 × 1080</span>
+            </a>
+            
+            <!-- 移动端预览入口 -->
+            <a href="/mobile_preview.html" class="grid-item" target="_blank">
+                <div class="icon-box mobile">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+                        <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+                    </svg>
+                </div>
+                <span class="grid-label">体育惠民移动端</span>
+                <span class="grid-desc">样机预览（375×812）</span>
+            </a>
+
+            <!-- 资金池管理后台入口 -->
+            <a href="/fund-admin/index.html" class="grid-item" target="_blank">
+                <div class="icon-box fund">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+                        <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                    </svg>
+                </div>
+                <span class="grid-label">体育惠民资金池管理</span>
+                <span class="grid-desc">1920 × 1080</span>
+            </a>
+            
+            <!-- 场馆端后台入口 -->
+            <a href="/venue-admin/index.html" class="grid-item" target="_blank">
+                <div class="icon-box venue" style="background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+                        <path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/>
+                    </svg>
+                </div>
+                <span class="grid-label">体育惠民场馆端</span>
+                <span class="grid-desc">1920 × 1080</span>
+            </a>
+        </div>
+
+        <div class="footer">
+            © 2024 苏州市体育惠民系统
+        </div>
+    </div>
 </body>
 </html>

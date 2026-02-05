@@ -33,9 +33,9 @@
                 <el-image :src="row.image" style="width: 160px; height: 90px; border-radius: 4px;" fit="cover" />
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="120">
+            <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row, $index }">
-                <el-button type="danger" size="small" @click="banners.splice($index, 1)">删除</el-button>
+                <el-button link type="danger" @click="banners.splice($index, 1)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
